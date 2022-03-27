@@ -15,5 +15,10 @@ dirs = dict(
   save_model = "./model",
   image_source = "/content/drive/MyDrive/BoneSegm/mask_labels_carpal_bones/",
   dict_source = "/content/drive/MyDrive/BoneSegm/mask_labels_carpal_bones/dict.json",
-  image_results = "./images"
+  image_results = "/content/drive/MyDrive/carpal_bones_segmentation/results"
+)
+
+credentials = dict(
+  ACCESS_KEY = 'AKIASWQJDSISFUUWUTCV',
+  SECRET_KEY = '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'
 )

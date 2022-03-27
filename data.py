@@ -49,7 +49,7 @@ class DataGeneratorUNET_OHE(tf.keras.utils.Sequence):
             
             # Store sample
             #img_path = '/content/drive/MyDrive/BoneSegm/mask_labels_carpal_bones/' + ID
-            img_path = self.img_src_directory + "/" ID 
+            img_path = self.img_src_directory + "/" + ID 
             img = Image.open(img_path).convert('L')
             
             newsize = self.dim
