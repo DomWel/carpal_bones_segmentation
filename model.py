@@ -1,50 +1,9 @@
-import numpy as np
-import tensorflow as tf
-from keras.models import Sequential
-from data import DataGenerator, MNISTDataGenerator, DataGeneratorUNET, DataGeneratorUNET_OHE
-import json
-from keras_unet.models import vanilla_unet
-from keras_unet.metrics import iou, iou_thresholded
 import keras
 from tensorflow.keras import layers
 
-classes = 8
-
-# Parameters
-params = {'dim': (512, 512),
-          'batch_size': 16,
-          'n_classes': classes,
-          'n_channels': 1,
-          'shuffle': True}
-
-print('In multi label model py')
-
-# Datasets
-# Opening JSON file
-f = open('/content/drive/MyDrive/BoneSegm/mask_labels_carpal_bones/dict.json')
-data_dicts = json.load(f)
-
-partition = data_dicts['partition']
-labels = data_dicts
-counter = 0
-for key in partition['train']: 
-  counter = counter +1
-
-print('Elems in Partition train: ', counter)
-
-counter = 0
-for key in partition['validation']: 
-  counter = counter +1
-
-print('Elems in Partition validation: ', counter)
-
-# Generators
-training_generator = DataGeneratorUNET_OHE(partition['train'], labels, **params)
-validation_generator = DataGeneratorUNET_OHE(partition['validation'], labels, **params)
-
+## Model is adapted from: https://keras.io/examples/vision/oxford_pets_image_segmentation/
 def get_model(img_size, num_classes):
     inputs = keras.Input(shape=img_size + (1,))
-
     ### [First half of the network: downsampling inputs] ###
 
     # Entry block
@@ -98,36 +57,3 @@ def get_model(img_size, num_classes):
     # Define the model
     model = keras.Model(inputs, outputs)
     return model
-
-
-# Free up RAM in case the model definition cells were run multiple times
-keras.backend.clear_session()
-
-# Build model
-model = get_model((512, 512), classes)
-model.summary()
-
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
-              loss='binary_crossentropy'
-              
-)
-"""
-
-model.compile(optimizer="rmsprop",
-              loss="sparse_categorical_crossentropy",
-              metrics=tf.keras.metrics.MeanIoU(2)
-)
-"""
-# Train model on dataset
-model.fit(training_generator,
-                    validation_data=validation_generator,
-                    use_multiprocessing=False,
-                    verbose=1, epochs = 50)
-
-model.save("/content/drive/MyDrive/BoneSegm/model/model_3")
-
-
-
-
-
-y_pred = model.predict(validation_generator)

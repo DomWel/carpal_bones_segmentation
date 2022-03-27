@@ -9,15 +9,12 @@ import keras
 from tensorflow.keras import layers
 
 
-
 # Parameters
 params = {'dim': (512, 512),
           'batch_size': 16,
           
           'n_channels': 3,
           'shuffle': True}
-
-print('Still in model build up')
 
 
 # Datasets
