@@ -8,7 +8,7 @@ dl_params = dict(
 
 training_params = dict(
   epochs = 100,
-  loss = "binary_crossentropy",
+  loss = "bce_jaccardi_loss", # or: "binary_crossentropy"
   optimizer = "rmsprop"  # or "adam" (tf.keras.optimizers.Adam(learning_rate=1e-3))
 )
 
@@ -22,6 +22,28 @@ dirs = dict(
 )
 
 credentials = dict(
-  ACCESS_KEY = 'AKIASWQJDSISFUUWUTCV',
-  SECRET_KEY = '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'
+  ACCESS_KEY = 'xxxxxxxxxxxxxx',
+  SECRET_KEY = 'xxxxxxxxxxxxxx'
+)
+
+server_ec2 = dict(
+  host = "ec2-54-76-152-56.eu-west-1.compute.amazonaws.com",
+  port="8501",
+  model_name ="model"
+)
+
+sagemaker_endpoint = dict(
+  service_name='sagemaker-runtime',
+  region_name='eu-west-1', 
+  EndpointName='unet-carpal-bones-serverless-ep-2022-03-29-16-07-40',
+  ContentType='application/json',
+  ACCESS_KEY = 'xxxxxxxxxxxxxx',
+  SECRET_KEY = 'xxxxxxxxxxxxxx'
+)
+
+others = dict(
+  # List of colors to draw in segmentation mask
+  color_list = [(255, 0, 0), (0,255,0), (0,0,255), (255,255,0), 
+          (255,0,255), (0,255,255), (100, 200, 0), (230, 0, 60),
+          (34, 78, 150), (45,15,160)]
 )

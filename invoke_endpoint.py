@@ -7,95 +7,81 @@ import sys
 import config
 import requests
 
-# List of colors to draw in segmentation mask
-colors = [(255, 0, 0), (0,255,0), (0,0,255), (255,255,0), 
-          (255,0,255), (0,255,255), (100, 200, 0), (230, 0, 60),
-          (34, 78, 150), (45,15,160)]
+def getPredictionFromSagemakerEndpoint(img):
+    # Connect to client for endpoint inference
+    sm_rt = boto3.client(service_name=config.sagemaker_endpoint['service_name'], 
+                      region_name=config.sagemaker_endpoint['region_name'], 
+                      aws_access_key_id=config.sagemaker_endpoint['ACCESS_KEY'],
+                      aws_secret_access_key=config.sagemaker_endpoint['SECRET_KEY']
+                      )
 
-sm_rt = boto3.client(service_name='sagemaker-runtime', 
-                     region_name='eu-west-1', 
-                     aws_access_key_id=config.credentials['ACCESS_KEY'],
-                     aws_secret_access_key=config.credentials['SECRET_KEY']
-                     )
-
-def get_prediction(img):
+    # JSON serialize img data
+    ## Using this method is difficult, serverless endpoint only accepts 
+    ## payloads of maximum 5 mb size
     img = img.tolist()
-    request = {               
-                    "inputs": [img]
-    }
-
+    request = {"inputs": [img]}
     data = json.dumps(request)
-    tic = time.time()
-     
-    response = sm_rt.invoke_endpoint(
-                EndpointName='unet-carpal-bones-serverless-ep-2022-03-29-16-07-40',
-                Body=data,
-                ContentType='application/json'
-    )
 
+    # Send request and measure response time
+    tic = time.time()  
+    response = sm_rt.invoke_endpoint(
+                EndpointName=config.sagemaker_endpoint['EndpointName'],
+                Body=data,
+                ContentType=config.sagemaker_endpoint['ContentType']
+    )
     tac = time.time()
     print("Total server response time: ", tac - tic)
 
+    # Read response 
     response = response["Body"].read()
     response = json.loads(response)
-    return response
+    y_preds = response["ouputs"]
+
+    return y_preds
 
 
-def get_rest_url(model_name, host="ec2-54-76-152-56.eu-west-1.compute.amazonaws.com", port="8501", verb="predict"):  
-     url = "http://{0}:{1}/v1/models/{2}:predict".format(host,port,model_name)
-     
-     return url
-     
-def rest_request(data, url):
-    payload = json.dumps({"instances": [data]})
-    response = requests.post(url=url, data=payload)
-    return response
+def getPredictionFromEC2(img):
+  # Create url for request
+  model_name = config.server_ec2["model_name"]
+  host = config.server_ec2["host"]
+  port= config.server_ec2["port"]
+  url = "http://{0}:{1}/v1/models/{2}:predict".format(host,port,model_name)
 
-f = open('/content/drive/MyDrive/BoneSegm/mask_labels_carpal_bones/dict.json')
-data_dicts = json.load(f)
+  # Create request data
+  img = img.tolist()
+  payload = json.dumps({"instances": [img]})
 
-partition = data_dicts['partition']
+  # Send request and measure response time
+  tic = time.time()
+  response = requests.post(url=url, data=payload)
+  tac = time.time()
+  print("Total server response time: ", tac - tic)
+
+  # Read server response
+  response = response.json()
+  y_preds = response['predictions']
+
+  return y_preds
 
 
-for index, img_path in enumerate(data_dicts['partition']['validation']):
-  img_path_complete = '/content/drive/MyDrive/BoneSegm/mask_labels_carpal_bones/' + img_path
+f = open(config.dirs["dict_partition"])
+partition = json.load(f)
+
+for index, img_path in enumerate(partition['validation']):
+  img_path_complete = config.dirs['image_source'] + img_path
   img = Image.open(img_path_complete).convert('RGB')
   src1 = img
   img = img.convert('L')
   newsize = (512, 512)
   img = img.resize(newsize)
-  img.save("/content/drive/MyDrive/BoneSegm/results_endpoint/original_images/"+ str(index) + ".png")  
   img = np.array(img) / 255
   img = np.expand_dims(img, 2)
  
-  print(img.shape)
-
-  #y_pred_dict = get_prediction(img)
-  url = get_rest_url("model")
-  
-  
-  img = img.tolist()
-  request = {               
-                  "inputs": [img]
-  }
-
-
-  #data = json.dumps(request)
-  tic = time.time()
-  response = rest_request(img, url)
-  toc = time.time()
-  print("Total server response time: ", toc - tic)
-  response = response.json()
-
-
-  
-  y_preds = response['predictions']
-
-
-
-
+  y_preds = getPredictionFromEC2(img)
+  # or: y_preds = getPredictionFromSagemakerEndpoint(img) if sagemaker endppint is up and running
   y_preds =  np.asarray(y_preds)
   
+  # Paste the predicted masks into the original image, class0 = background is left out 
   for index_bone in range(1, y_preds.shape[3]):
     img_array = y_preds[0, :, :, index_bone] * 255
 
@@ -110,11 +96,11 @@ for index, img_path in enumerate(data_dicts['partition']['validation']):
       for j in range(img_RGB.size[1]):
           red_value = pixels[i,j][0]
           if red_value > 50:
-            pixels[i,j] =  colors[index_bone]
+            pixels[i,j] =  config.others['color_list'][index_bone]
     
     img_RGB.putalpha(fusion_mask)
     src1.paste(img_RGB, (0,0), img_RGB)
 
-  src1.save(config.dirs['image_results'] + "/" + str(index) + ".png")
+  src1.save(config.dirs['image_results'] + "/predicted_mask_for_" + str(img_path))
   
 
