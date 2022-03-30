@@ -5,9 +5,12 @@ from data import DataGeneratorUNET_OHE
 from PIL import Image
 import sys 
 import config
+import requests
 
 # List of colors to draw in segmentation mask
-colors = [(255, 0, 0), (0,255,0), (0,0,255), (255,255,0), (255,0,255), (0,255,255), (100, 200, 0), (230, 0, 60)]
+colors = [(255, 0, 0), (0,255,0), (0,0,255), (255,255,0), 
+          (255,0,255), (0,255,255), (100, 200, 0), (230, 0, 60),
+          (34, 78, 150), (45,15,160)]
 
 sm_rt = boto3.client(service_name='sagemaker-runtime', 
                      region_name='eu-west-1', 
@@ -25,7 +28,7 @@ def get_prediction(img):
     tic = time.time()
      
     response = sm_rt.invoke_endpoint(
-                EndpointName='tensorflow-inference-2022-03-13-20-43-50-992',
+                EndpointName='unet-carpal-bones-serverless-ep-2022-03-29-16-07-40',
                 Body=data,
                 ContentType='application/json'
     )
@@ -37,6 +40,16 @@ def get_prediction(img):
     response = json.loads(response)
     return response
 
+
+def get_rest_url(model_name, host="ec2-54-76-152-56.eu-west-1.compute.amazonaws.com", port="8501", verb="predict"):  
+     url = "http://{0}:{1}/v1/models/{2}:predict".format(host,port,model_name)
+     
+     return url
+     
+def rest_request(data, url):
+    payload = json.dumps({"instances": [data]})
+    response = requests.post(url=url, data=payload)
+    return response
 
 f = open('/content/drive/MyDrive/BoneSegm/mask_labels_carpal_bones/dict.json')
 data_dicts = json.load(f)
@@ -55,8 +68,32 @@ for index, img_path in enumerate(data_dicts['partition']['validation']):
   img = np.array(img) / 255
   img = np.expand_dims(img, 2)
  
-  y_pred_dict = get_prediction(img)
-  y_preds = y_pred_dict['outputs']
+  print(img.shape)
+
+  #y_pred_dict = get_prediction(img)
+  url = get_rest_url("model")
+  
+  
+  img = img.tolist()
+  request = {               
+                  "inputs": [img]
+  }
+
+
+  #data = json.dumps(request)
+  tic = time.time()
+  response = rest_request(img, url)
+  toc = time.time()
+  print("Total server response time: ", toc - tic)
+  response = response.json()
+
+
+  
+  y_preds = response['predictions']
+
+
+
+
   y_preds =  np.asarray(y_preds)
   
   for index_bone in range(1, y_preds.shape[3]):

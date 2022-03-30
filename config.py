@@ -7,14 +7,17 @@ dl_params = dict(
 )
 
 training_params = dict(
-  epochs = 50,
-  loss = "binary_crossentropy"
+  epochs = 100,
+  loss = "binary_crossentropy",
+  optimizer = "rmsprop"  # or "adam" (tf.keras.optimizers.Adam(learning_rate=1e-3))
 )
 
 dirs = dict(
-  save_model = "./model",
-  image_source = "/content/drive/MyDrive/BoneSegm/mask_labels_carpal_bones/",
-  dict_source = "/content/drive/MyDrive/BoneSegm/mask_labels_carpal_bones/dict.json",
+  #save_model = "/content/drive/MyDrive/carpal_bones_segmentation/results/models/model1",
+  save_model = "/content/drive/MyDrive/carpal_bones_segmentation/results/models/model1",
+  image_source = "/tmp/carpal_bones_segmentation/carpal_bones_segmented_incl_pisiforme",
+  dict_partition = "/tmp/carpal_bones_segmentation/carpal_bones_segmented_incl_pisiforme/partition",
+  dict_labels = "/tmp/carpal_bones_segmentation/carpal_bones_segmented_incl_pisiforme/labels", 
   image_results = "/content/drive/MyDrive/carpal_bones_segmentation/results"
 )
 
