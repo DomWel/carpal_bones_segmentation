@@ -1,27 +1,18 @@
-import numpy as np
-import tensorflow as tf
-from keras.models import Sequential
-from data import DataGeneratorUNET_OHE, DataGeneratorUNET_OHE2
+from data import DataGeneratorUNET_OHE2
 import json
-import keras
-from tensorflow.keras import layers
 import config
-import model as model_generator
-import segmentation_models as sm
-sm.set_framework('tf.keras')
+import model
+from helper_functions import getLoss, getMetrics
 
-sm.framework()
 
-# Dataloader generation
-# Opening JSON file
-
+# Load dataset dict files
 f = open(config.dirs['dict_partition'])
 partition = json.load(f)
 
 f = open(config.dirs['dict_labels'])
 labels = json.load(f)
 
-
+# Create dataloaders 
 training_generator = DataGeneratorUNET_OHE2(partition['train'], 
                                            labels, 
                                            config.dirs['image_source'], 
@@ -32,15 +23,18 @@ validation_generator = DataGeneratorUNET_OHE2(partition['validation'],
                                              **config.dl_params)
 
 # Build model
-model = model_generator.get_model(config.dl_params['dim'], config.dl_params['n_classes']+1)
-#model = sm.Unet('vgg16', input_shape=(None, None, 1), encoder_weights=None, classes=9)
+model = model.getModel(config.training_params['model_name'],
+                 img_size=config.dl_params['dim'], 
+                 num_classes=config.dl_params['n_classes']+1,  # Background has to be added as additional  class
+                 num_channels=config.dl_params['n_channels'])
 model.summary()
-model.compile(optimizer= config.training_params['optimizer'],
-              #loss=config.training_params['loss'],
-              loss=sm.losses.bce_jaccard_loss,
-              metrics=[sm.metrics.iou_score, sm.metrics.f1_score])
 
-#model.save(config.dirs['save_model'])
+# Compile model
+loss = getLoss(config.training_params['loss'])
+metrics = getMetrics(config.training_params['metrics'])
+model.compile(optimizer= config.training_params['optimizer'],
+              loss=loss,
+              metrics=metrics)
 
 # Train model on dataset
 model.fit(training_generator,
@@ -49,4 +43,5 @@ model.fit(training_generator,
           verbose=1, 
           epochs = config.training_params['epochs'])
 
+# Save model in protobuff format
 model.save(config.dirs['save_model'])

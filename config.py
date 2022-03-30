@@ -7,9 +7,11 @@ dl_params = dict(
 )
 
 training_params = dict(
+  model_name = "custom_model_from_keras_examples",  # Alternatives: 'vgg16', 'resnet18', 'inceptionv3'
   epochs = 100,
   loss = "bce_jaccardi_loss", # or: "binary_crossentropy"
-  optimizer = "rmsprop"  # or "adam" (tf.keras.optimizers.Adam(learning_rate=1e-3))
+  optimizer = "rmsprop",  # or "adam" (tf.keras.optimizers.Adam(learning_rate=1e-3))
+  metrics = ["iou_score", "f1_score"]
 )
 
 dirs = dict(
@@ -21,10 +23,6 @@ dirs = dict(
   image_results = "/content/drive/MyDrive/carpal_bones_segmentation/results"
 )
 
-credentials = dict(
-  ACCESS_KEY = 'xxxxxxxxxxxxxx',
-  SECRET_KEY = 'xxxxxxxxxxxxxx'
-)
 
 server_ec2 = dict(
   host = "ec2-54-76-152-56.eu-west-1.compute.amazonaws.com",

@@ -1,9 +1,12 @@
 import keras
 from tensorflow.keras import layers
+import segmentation_models as sm
+sm.set_framework('tf.keras')
 
-## Model is adapted from: https://keras.io/examples/vision/oxford_pets_image_segmentation/
-def get_model(img_size, num_classes):
-    inputs = keras.Input(shape=img_size + (1,))
+def getModel(model_name, img_size=(512,512), num_classes=9, num_channels=1):
+  if model_name == "custom_model_from_keras_examples":
+    ## Model is adapted from: https://keras.io/examples/vision/oxford_pets_image_segmentation/
+    inputs = keras.Input(shape=img_size + (num_channels,))
     ### [First half of the network: downsampling inputs] ###
 
     # Entry block
@@ -57,3 +60,7 @@ def get_model(img_size, num_classes):
     # Define the model
     model = keras.Model(inputs, outputs)
     return model
+
+  else:
+    # Return models from the Github repo https://github.com/qubvel/segmentation_models
+    return sm.Unet(model_name, input_shape=(img_size[0], img_size[1], num_channels), encoder_weights=None, classes=num_classes)

@@ -8,38 +8,50 @@ import model
 import segmentation_models as sm
 sm.set_framework('tf.keras')
 
+from get_server_inference import getPredictionFromSagemakerEndpoint, getPredictionFromEC2
+from helper_functions import createImageWithMaskLabels
+
 # Datasets
 # Opening JSON file
 f = open(config.dirs['dict_partition'])
 partition = json.load(f)
 
-model =  model.get_model(config.dl_params['dim'], config.dl_params['n_classes']+1)
-#model = sm.Unet('inceptionv3', input_shape=(None, None, 1), encoder_weights=None, classes=9)
+# Option A: load pretraind model
+model = model.getModel(config.training_params['model_name'],
+                 img_size=config.dl_params['dim'], 
+                 num_classes=config.dl_params['n_classes']+1,  # Background has to be added as additional  class
+                 num_channels=config.dl_params['n_channels'])
 
 model.load_weights(config.dirs['save_model'])
+get_predict = model.predict
 
-#model.summary()
-#tf.keras.utils.plot_model(model, to_file="/content/drive/MyDrive/BoneSegm/model.png", show_shapes=True)
 
-# Cretate result images (= oringinal images + predicted masks)
+# Option B: Get server inference from deployed model
+# get_predict = getPredictionFromSagemakerEndpoint
+# get_predict = getPredictionFromEC2
+
+
 for index, img_path in enumerate(partition['validation']):
   img_path_complete = config.dirs['image_source'] + "/" + img_path
   
+  # Load and preprocess image
   img = Image.open(img_path_complete).convert('RGB')
   src1 = img
   img = img.convert('L')
-
-  newsize = (400, 400)
+  newsize = config.dl_params["dim"]
   img = img.resize(newsize)
-
   img = np.array(img) / 255
-
-  colors = [(255, 0, 0), (0,255,0), (0,0,255), (255,255,0), (255,0,255), (0,255,255), (100, 200, 0), (230, 0, 60), (60,230,0)]
-
-  #X = np.empty((self.batch_size, *self.dim, self.n_channels))
   img = np.expand_dims(img, 0)
+
+  # Get preds
   y_pred = model.predict(img)
 
+  # Draw predicted masks on original images and save image 
+  src1 = createImageWithMaskLabels(src1, y_pred)
+  src1.save(config.dirs['image_results'] + "/predicted_mask_" + str(img_path))
+
+
+  """
   for index_bone in range(1, y_pred.shape[3]):
     img_array = y_pred[0,:, :, index_bone] * 255
     img = Image.fromarray(img_array * 0.3)
@@ -57,9 +69,5 @@ for index, img_path in enumerate(partition['validation']):
     
     img_RGB.putalpha(fusion_mask)
     src1.paste(img_RGB, (0,0), img_RGB)
-
-  src1.save(config.dirs['image_results'] + "/" + str(index) + ".png")
-
-
-
+  """
 
