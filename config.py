@@ -4,6 +4,8 @@ dl_params = dict(
     n_channels = 1, 
     n_classes = 8, 
     shuffle = True, 
+    random_crop_coeff = 0.5,  # Turn off random crop: random_crop_coeff = None
+    autocontrast = True
 )
 
 training_params = dict(

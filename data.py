@@ -1,14 +1,14 @@
 import numpy as np
-import keras
 import tensorflow as tf
 from PIL import Image
-from skimage.transform import resize
+from helper_functions import preprocessImagePIL, createImageWithMaskLabels
+import random
 import config
 
 class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
     'Generates data for Keras'
     def __init__(self, list_IDs, labels, img_src_directory, batch_size=32, dim=(512, 512), n_channels=1,
-                 shuffle=True, n_classes=7):
+                 shuffle=True, n_classes=7, random_crop_coeff = 0.5, autocontrast=True):
         'Initialization'
         self.dim = dim
         self.batch_size = batch_size
@@ -17,7 +17,9 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
         self.n_classes = n_classes
         self.n_channels = n_channels
         self.img_src_directory = img_src_directory
-        
+        self.random_crop_coeff = random_crop_coeff
+        self.autocontrast = autocontrast
+
         self.shuffle = shuffle
         self.on_epoch_end()
 
@@ -50,8 +52,17 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
         for i, ID in enumerate(list_IDs_temp):
             # Store sample
             img_path = self.img_src_directory + "/" + ID 
-            
             img_orig = Image.open(img_path).convert('RGB')
+
+
+
+            img, random_values = preprocessImagePIL(img_orig, 
+                      n_channels= self.n_channels,
+                      dim = self.dim,
+                      autocontrast=self.autocontrast, 
+                      random_crop_coeff = self.random_crop_coeff
+                      )
+            """
             img = Image.open(img_path).convert('L')
             
             newsize = self.dim
@@ -60,6 +71,8 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
             img = np.array(img_resized) / 255
             
             img = np.expand_dims(img, 2)
+            """
+            #img_for_image = Image.fromarray(img[:,:,0]*255)
             X[i,] = img 
 
             one_hot = np.zeros((img.shape[0], img.shape[1], self.n_classes+1))
@@ -70,6 +83,14 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
             
             for index in range(mask_np.shape[2]):
                 img = Image.fromarray(mask_np[:,:,index])
+                
+                # Apply random crop
+                if self.random_crop_coeff != None:
+                  random_crop_size = random_values[0]
+                  x1 = random_values[1]
+                  y1 = random_values[2]
+                  img = img.crop((x1, y1, x1 + random_crop_size, y1 + random_crop_size))
+
                 img = img.resize(self.dim)
                 img = np.array(img) * 1.00
                 
@@ -79,7 +100,9 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
 
             one_hot[:, :, 0] = background
             
-
+            # Check datalaoder output visually
+            #img = createImageWithMaskLabels(img_for_image, one_hot, config.others['color_list'])
+            #img.save(config.dirs['image_results']+ "/" +str(i)+".png")
             y[i] = one_hot
     
         return X, y

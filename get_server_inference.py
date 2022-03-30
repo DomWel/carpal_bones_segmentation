@@ -1,11 +1,4 @@
-import numpy as np
-import csv, boto3, json, time
-import numpy as np
-from data import DataGeneratorUNET_OHE
-from PIL import Image
-import sys 
-import config
-import requests
+import boto3, json, time, config, requests
 
 def getPredictionFromSagemakerEndpoint(img):
     # Connect to client for endpoint inference

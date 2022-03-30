@@ -9,7 +9,7 @@ import segmentation_models as sm
 sm.set_framework('tf.keras')
 
 from get_server_inference import getPredictionFromSagemakerEndpoint, getPredictionFromEC2
-from helper_functions import createImageWithMaskLabels
+from helper_functions import createImageWithMaskLabels, preprocessImagePIL
 
 # Datasets
 # Opening JSON file
@@ -36,15 +36,18 @@ for index, img_path in enumerate(partition['validation']):
   
   # Load and preprocess image
   img = Image.open(img_path_complete).convert('RGB')
-  src1 = img
-  img = img.convert('L')
-  newsize = config.dl_params["dim"]
-  img = img.resize(newsize)
-  img = np.array(img) / 255
-  img = np.expand_dims(img, 0)
+  src1 = img   # Image has to be rgb to draw colored masks in
+
+  # Preprocess image 
+  img = preprocessImagePIL(img, 
+                        n_channels= config.dl_params['n_channels'],
+                        dim = config.dl_params['dim'],
+                        autocontrast=True, 
+                        random_crop_size = None
+                        )
 
   # Get preds
-  y_pred = model.predict(img)
+  y_pred = get_predict(img)
 
   # Draw predicted masks on original images and save image 
   src1 = createImageWithMaskLabels(src1, y_pred)
