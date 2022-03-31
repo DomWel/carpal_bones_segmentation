@@ -3,7 +3,7 @@ import tensorflow as tf
 from PIL import Image
 from helper_functions import preprocessImagePIL, createImageWithMaskLabels
 import random
-import config
+import config  # only needed if images of the dataloader output are generated to test preprocessing functions
 
 class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
     'Generates data for Keras'
@@ -62,16 +62,7 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
                       autocontrast=self.autocontrast, 
                       random_crop_coeff = self.random_crop_coeff
                       )
-            """
-            img = Image.open(img_path).convert('L')
-            
-            newsize = self.dim
-            img_resized = img.resize(newsize)
-            
-            img = np.array(img_resized) / 255
-            
-            img = np.expand_dims(img, 2)
-            """
+
             #img_for_image = Image.fromarray(img[:,:,0]*255)
             X[i,] = img 
 
@@ -99,7 +90,7 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
                 background = np.where(background > 0, 1, 0)
 
             one_hot[:, :, 0] = background
-            
+
             # Check datalaoder output visually
             #img = createImageWithMaskLabels(img_for_image, one_hot, config.others['color_list'])
             #img.save(config.dirs['image_results']+ "/" +str(i)+".png")

@@ -4,11 +4,13 @@ sm.set_framework('tf.keras')
 import numpy as np
 import random
 
-def createImageWithMaskLabels(orig_img, masks_np, colors):
+def createImageWithMaskLabels(orig_img, masks_np, colors, adjust_to_orig_img_size=False):
   orig_img = orig_img.convert('RGB')
   for index in range(1, masks_np.shape[2]):
     img_array = masks_np[:, :, index] * 255
     img = Image.fromarray(img_array * 0.3)
+    if adjust_to_orig_img_size:
+      img = img.resize(orig_img.size)
     img_RGB = img.convert('RGB')
     fusion_mask = img.convert('L')
     pixels = img_RGB.load()
@@ -31,10 +33,13 @@ def getLoss(loss_name):
 
 def getMetrics(metrics_list):
   metrics_func = []
-  if 'iou_score' in metrics_list:
-    metrics_func.append(sm.metrics.iou_score)
-  if 'f1_score' in metrics_list:
-    metrics_func.append(sm.metrics.f1_score)
+  for metric in metrics_list:
+    if metric == 'iou_score':
+      metrics_func.append(sm.metrics.iou_score)
+    elif metric == 'f1_score':
+      metrics_func.append(sm.metrics.f1_score)
+    else:
+      metrics_func.append(metric)
   return metrics_func
 
 def preprocessImagePIL(img, n_channels=1, dim=(512,512), random_crop_coeff=None, autocontrast=True):
@@ -44,7 +49,6 @@ def preprocessImagePIL(img, n_channels=1, dim=(512,512), random_crop_coeff=None,
   if autocontrast:
     img = ImageOps.autocontrast(img)
 
-  # Random crop
   random_crop_params=[]
   if random_crop_coeff != None:
     random_crop_size = random.randrange(random_crop_coeff*dim[0], dim[0])
