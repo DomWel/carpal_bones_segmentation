@@ -1,28 +1,45 @@
-dl_params = dict(
+dl_train_params = dict(
     dim = (512, 512),
     batch_size = 16,
     n_channels = 1, 
     n_classes = 8, 
     shuffle = True, 
     random_crop_coeff = 0.5,  # Turn off random crop: random_crop_coeff = None
+    autocontrast = True,
+    padding = True
+)
+
+dl_eval_params = dict(
+    dim = (512, 512),
+    batch_size = 16,
+    n_channels = 1, 
+    n_classes = 8, 
+    shuffle = False, 
+    random_crop_coeff = None,  # Turn off random crop: random_crop_coeff = None
     autocontrast = True
 )
 
 training_params = dict(
-  model_name = "resnet50", #"custom_model_from_keras_examples", 'vgg16', 'resnet18', 'inceptionv3'
+  models_list = ["inceptionv3", "vgg16", "resnet18", "custom_model_from_keras_examples"],
   epochs = 100,
   loss = "bce_jaccardi_loss", # or: "binary_crossentropy"
   optimizer = "rmsprop",  # or "adam" (tf.keras.optimizers.Adam(learning_rate=1e-3))
   metrics = ["iou_score", "f1_score"]
 )
 
+eval_params = dict(
+  models_list = ["inceptionv3", "vgg16", "resnet18", "custom_model_from_keras_examples"],
+  loss = "bce_jaccardi_loss", # or: "binary_crossentropy"
+  metrics = ["iou_score", "f1_score"]
+)
+
 dirs = dict(
-  #save_model = "/content/drive/MyDrive/carpal_bones_segmentation/results/models/model1",
-  save_model = "/content/drive/MyDrive/carpal_bones_segmentation/results_resnet_50_100e_random_crop/models/model1",
+  results_path = "/content/drive/MyDrive/carpal_bones_segmentation/results_new_1",
   image_source = "/tmp/carpal_bones_segmentation/corrected_dataset",
   dict_partition = "/tmp/carpal_bones_segmentation/corrected_dataset/partition",
   dict_labels = "/tmp/carpal_bones_segmentation/corrected_dataset/labels", 
-  image_results = "/content/drive/MyDrive/carpal_bones_segmentation/results"
+  #save_model = "/content/drive/MyDrive/carpal_bones_segmentation/results/models/model1",
+  #model_dir = results_path + "/models",
 )
 
 

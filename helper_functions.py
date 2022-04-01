@@ -3,6 +3,7 @@ import segmentation_models as sm
 sm.set_framework('tf.keras')
 import numpy as np
 import random
+import config
 
 def createImageWithMaskLabels(orig_img, masks_np, colors, adjust_to_orig_img_size=False):
   orig_img = orig_img.convert('RGB')
@@ -42,24 +43,73 @@ def getMetrics(metrics_list):
       metrics_func.append(metric)
   return metrics_func
 
-def preprocessImagePIL(img, n_channels=1, dim=(512,512), random_crop_coeff=None, autocontrast=True):
-  if n_channels == 1:
+def preprocessImagePIL(img, img_id, convert_grayscale=True, 
+                      dim=(512,512), random_crop_params=None, 
+                      autocontrast=True, padding=True, norm=True):
+  if convert_grayscale:
     img = img.convert('L')
   
   if autocontrast:
     img = ImageOps.autocontrast(img)
-
+  """
   random_crop_params=[]
   if random_crop_coeff != None:
-    random_crop_size = random.randrange(random_crop_coeff*dim[0], dim[0])
-    x1 = random.randrange(0, dim[0] - random_crop_size)
-    y1 = random.randrange(0, dim[1] - random_crop_size)
-    img = img.crop((x1, y1, x1 + random_crop_size, y1 + random_crop_size))
-    random_crop_params=[random_crop_size, x1, y1]
+    random_crop_factor = random.uniform(random_crop_coeff, 1.0)
+    x_orig = img.size[0]
+    y_orig = img.size[1]
+    crop_width = int(x_orig * random_crop_factor)
+    crop_height = int(y_orig * random_crop_factor)
+    x1 = random.randrange(0, x_orig - crop_width)
+    y1 = random.randrange(0, y_orig - crop_height)
+    img = img.crop((x1, y1, x1 + crop_width, y1 + crop_height))
+    random_crop_params=[crop_width, crop_height, x1, y1]
+    img = img.resize((x_orig, y_orig))
+  """
+  if random_crop_params != None:
+    img = randomCrop(img, random_crop_params)
 
-  img = img.resize(dim)
-  img = np.array(img) / 255
+  if padding:
+      img = padImg(img, target_size=dim[0])
+  else: 
+      img = img.resize(dim)
+  
+  #img.save(config.dirs["results_path"]+ "/" + str(img_id) +  ".png")
+  if norm == True:
+    img = np.array(img) / 255
   img = np.expand_dims(img, 2)
-  return img, random_crop_params  # The random crop params are needed to crop mask with the same values
+  return img  # The random crop params are needed to crop mask with the same values
 
+def padImg(img, target_size=512):
+    width, height = img.size
+    if width == height:
+        if width != target_size:
+          img = img.resize((target_size, target_size))
+        return img
+    elif width > height:
+        result = Image.new(img.mode, (width, width))
+        result.paste(img, (0, 0))
+        if width != target_size:
+          result = result.resize((target_size, target_size))
+        return result
+    else:
+        result = Image.new(img.mode, (height, height))
+        result.paste(img, (0, 0))
+        if height != target_size:
+          result = result.resize((target_size, target_size))
+        return result
+
+def randomCrop(img, random_params):
+    x_orig = img.size[0]
+    y_orig = img.size[1]
+
+    random_crop_factor = random_params[0]
+    crop_width = int(x_orig * random_crop_factor)
+    crop_height = int(y_orig * random_crop_factor)
+
+    random_x_pos = int(random_params[1] * (x_orig - crop_width))
+    random_y_pos = int(random_params[2] * (y_orig - crop_height))
+
+    img = img.crop((random_x_pos, random_y_pos, random_x_pos + crop_width, random_y_pos + crop_height))
+    img = img.resize((x_orig, y_orig))
+    return img
   

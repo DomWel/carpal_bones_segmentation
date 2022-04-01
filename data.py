@@ -8,7 +8,7 @@ import config  # only needed if images of the dataloader output are generated to
 class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
     'Generates data for Keras'
     def __init__(self, list_IDs, labels, img_src_directory, batch_size=32, dim=(512, 512), n_channels=1,
-                 shuffle=True, n_classes=7, random_crop_coeff = 0.5, autocontrast=True):
+                 shuffle=True, n_classes=7, random_crop_coeff = None, autocontrast=True, padding=True):
         'Initialization'
         self.dim = dim
         self.batch_size = batch_size
@@ -19,7 +19,7 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
         self.img_src_directory = img_src_directory
         self.random_crop_coeff = random_crop_coeff
         self.autocontrast = autocontrast
-
+        self.padding = padding
         self.shuffle = shuffle
         self.on_epoch_end()
 
@@ -54,16 +54,19 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
             img_path = self.img_src_directory + "/" + ID 
             img_orig = Image.open(img_path).convert('RGB')
 
-
-
-            img, random_values = preprocessImagePIL(img_orig, 
-                      n_channels= self.n_channels,
-                      dim = self.dim,
-                      autocontrast=self.autocontrast, 
-                      random_crop_coeff = self.random_crop_coeff
-                      )
-
-            #img_for_image = Image.fromarray(img[:,:,0]*255)
+            if self.random_crop_coeff != None:
+              random_crop_size = random.uniform(self.random_crop_coeff, 1.0)
+              random_crop_pos_x = random.uniform(0, 1.0)
+              random_crop_pos_y = random.uniform(0, 1.0) 
+              random_crop_params = [random_crop_size, random_crop_pos_x, random_crop_pos_y]
+            else: 
+              random_crop_params = None
+            
+            img = preprocessImagePIL(img_orig, ID, convert_grayscale=True, 
+                      dim=self.dim, random_crop_params=random_crop_params, 
+                      autocontrast=self.autocontrast, padding=self.padding)
+            print(img.shape)
+            img_for_image = Image.fromarray(img[:,:,0]*255)
             X[i,] = img 
 
             one_hot = np.zeros((img.shape[0], img.shape[1], self.n_classes+1))
@@ -76,24 +79,20 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
                 img = Image.fromarray(mask_np[:,:,index])
                 
                 # Apply random crop
-                if self.random_crop_coeff != None:
-                  random_crop_size = random_values[0]
-                  x1 = random_values[1]
-                  y1 = random_values[2]
-                  img = img.crop((x1, y1, x1 + random_crop_size, y1 + random_crop_size))
-
-                img = img.resize(self.dim)
-                img = np.array(img) * 1.00
-                
-                one_hot[:, :, index+1] = img
-                background = background - img
+                img = preprocessImagePIL(img, ID, convert_grayscale=False, 
+                      dim=(512,512), random_crop_params=random_crop_params, 
+                      autocontrast=False, padding=self.padding, norm=False)
+                print(np.amax(img))
+                print(img.shape)
+                one_hot[:, :, index+1] = img[:,:,0]
+                background = background - img[:,:,0]
                 background = np.where(background > 0, 1, 0)
 
             one_hot[:, :, 0] = background
 
             # Check datalaoder output visually
-            #img = createImageWithMaskLabels(img_for_image, one_hot, config.others['color_list'])
-            #img.save(config.dirs['image_results']+ "/" +str(i)+".png")
+            img = createImageWithMaskLabels(img_for_image, one_hot, config.others['color_list'])
+            img.save(config.dirs['results_path']+ "/" +str(i)+".png")
             y[i] = one_hot
     
         return X, y
