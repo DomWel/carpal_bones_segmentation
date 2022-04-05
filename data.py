@@ -65,8 +65,8 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
             img = preprocessImagePIL(img_orig, ID, convert_grayscale=True, 
                       dim=self.dim, random_crop_params=random_crop_params, 
                       autocontrast=self.autocontrast, padding=self.padding)
-            print(img.shape)
-            img_for_image = Image.fromarray(img[:,:,0]*255)
+            
+            #img_for_image = Image.fromarray(img[:,:,0]*255)
             X[i,] = img 
 
             one_hot = np.zeros((img.shape[0], img.shape[1], self.n_classes+1))
@@ -82,8 +82,7 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
                 img = preprocessImagePIL(img, ID, convert_grayscale=False, 
                       dim=(512,512), random_crop_params=random_crop_params, 
                       autocontrast=False, padding=self.padding, norm=False)
-                print(np.amax(img))
-                print(img.shape)
+       
                 one_hot[:, :, index+1] = img[:,:,0]
                 background = background - img[:,:,0]
                 background = np.where(background > 0, 1, 0)
@@ -91,8 +90,8 @@ class DataGeneratorUNET_OHE2(tf.keras.utils.Sequence):
             one_hot[:, :, 0] = background
 
             # Check datalaoder output visually
-            img = createImageWithMaskLabels(img_for_image, one_hot, config.others['color_list'])
-            img.save(config.dirs['results_path']+ "/" +str(i)+".png")
+            #img = createImageWithMaskLabels(img_for_image, one_hot, config.others['color_list'])
+            #img.save(config.dirs['results_path']+ "/" +str(i)+".png")
             y[i] = one_hot
     
         return X, y
