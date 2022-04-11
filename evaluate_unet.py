@@ -44,7 +44,7 @@ for index, model_name in enumerate(config.eval_params['models_list'], start=0):
                   num_classes=config.dl_eval_params['n_classes']+1,  
                   num_channels=config.dl_eval_params['n_channels'])
   directory_model = config.dirs["results_path"] + "/models/" + model_name
-  model.load_weights(directory_model)
+  model.load_weights(directory_model).expect_partial()
 
   # Compile model
   loss = getLoss(config.eval_params['loss'])

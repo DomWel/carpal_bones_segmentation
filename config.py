@@ -4,9 +4,9 @@ dl_train_params = dict(
     n_channels = 1, 
     n_classes = 8, 
     shuffle = True, 
-    random_crop_coeff = 0.5,  # Turn off random crop: random_crop_coeff = None
+    random_crop_coeff = None,  # Turn off random crop: random_crop_coeff = None
     autocontrast = True,
-    padding = True
+    padding = True          # If false images will be resized to "dim" without regard of the original ratio
 )
 
 dl_eval_params = dict(
@@ -16,7 +16,8 @@ dl_eval_params = dict(
     n_classes = 8, 
     shuffle = False, 
     random_crop_coeff = None,  # Turn off random crop: random_crop_coeff = None
-    autocontrast = True
+    autocontrast = True, 
+    padding=True
 )
 
 training_params = dict(
@@ -34,7 +35,7 @@ eval_params = dict(
 )
 
 dirs = dict(
-  results_path = "/content/drive/MyDrive/carpal_bones_segmentation/results_new_1",
+  results_path = "/content/drive/MyDrive/carpal_bones_segmentation/results_wo_rc_padding",
   image_source = "/tmp/carpal_bones_segmentation/corrected_dataset",
   dict_partition = "/tmp/carpal_bones_segmentation/corrected_dataset/partition",
   dict_labels = "/tmp/carpal_bones_segmentation/corrected_dataset/labels", 
