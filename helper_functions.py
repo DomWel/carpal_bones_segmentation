@@ -43,7 +43,7 @@ def getMetrics(metrics_list):
       metrics_func.append(metric)
   return metrics_func
 
-def preprocessImagePIL(img, img_id, convert_grayscale=True, 
+def preprocessImagePIL(img, convert_grayscale=True, 
                       dim=(512,512), random_crop_params=None, 
                       autocontrast=True, padding=True, norm=True):
   if convert_grayscale:
@@ -51,20 +51,7 @@ def preprocessImagePIL(img, img_id, convert_grayscale=True,
   
   if autocontrast:
     img = ImageOps.autocontrast(img)
-  """
-  random_crop_params=[]
-  if random_crop_coeff != None:
-    random_crop_factor = random.uniform(random_crop_coeff, 1.0)
-    x_orig = img.size[0]
-    y_orig = img.size[1]
-    crop_width = int(x_orig * random_crop_factor)
-    crop_height = int(y_orig * random_crop_factor)
-    x1 = random.randrange(0, x_orig - crop_width)
-    y1 = random.randrange(0, y_orig - crop_height)
-    img = img.crop((x1, y1, x1 + crop_width, y1 + crop_height))
-    random_crop_params=[crop_width, crop_height, x1, y1]
-    img = img.resize((x_orig, y_orig))
-  """
+
   if random_crop_params != None:
     img = randomCrop(img, random_crop_params)
 
@@ -73,11 +60,10 @@ def preprocessImagePIL(img, img_id, convert_grayscale=True,
   else: 
       img = img.resize(dim)
   
-  #img.save(config.dirs["results_path"]+ "/" + str(img_id) +  ".png")
   if norm == True:
     img = np.array(img) / 255
   img = np.expand_dims(img, 2)
-  return img  # The random crop params are needed to crop mask with the same values
+  return img  
 
 def padImg(img, target_size=512):
     width, height = img.size

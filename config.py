@@ -39,13 +39,10 @@ dirs = dict(
   image_source = "/tmp/carpal_bones_segmentation/corrected_dataset",
   dict_partition = "/tmp/carpal_bones_segmentation/corrected_dataset/partition",
   dict_labels = "/tmp/carpal_bones_segmentation/corrected_dataset/labels", 
-  #save_model = "/content/drive/MyDrive/carpal_bones_segmentation/results/models/model1",
-  #model_dir = results_path + "/models",
 )
 
-
 server_ec2 = dict(
-  host = "ec2-54-76-152-56.eu-west-1.compute.amazonaws.com",
+  host = "XXXXXXXXXXXXX",
   port="8501",
   model_name ="model"
 )
@@ -53,7 +50,7 @@ server_ec2 = dict(
 sagemaker_endpoint = dict(
   service_name='sagemaker-runtime',
   region_name='eu-west-1', 
-  EndpointName='unet-carpal-bones-serverless-ep-2022-03-29-16-07-40',
+  EndpointName='XXXXXXXXXXXX',
   ContentType='application/json',
   ACCESS_KEY = 'xxxxxxxxxxxxxx',
   SECRET_KEY = 'xxxxxxxxxxxxxx'
