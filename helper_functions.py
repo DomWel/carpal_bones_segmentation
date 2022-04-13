@@ -62,6 +62,7 @@ def preprocessImagePIL(img, convert_grayscale=True,
   
   if norm == True:
     img = np.array(img) / 255
+    
   img = np.expand_dims(img, 2)
   return img  
 
